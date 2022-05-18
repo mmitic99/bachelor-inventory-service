@@ -1,0 +1,1 @@
+# bachelor-inventory-service
