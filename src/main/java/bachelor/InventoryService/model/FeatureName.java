@@ -20,4 +20,9 @@ public class FeatureName {
 
     @Indexed(unique = true)
     private String name;
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }
