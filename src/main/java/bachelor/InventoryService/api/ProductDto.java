@@ -1,4 +1,4 @@
-package bachelor.InventoryService.dto;
+package bachelor.InventoryService.api;
 
 import bachelor.InventoryService.model.Category;
 import bachelor.InventoryService.model.FeatureName;

@@ -1,7 +1,6 @@
 package bachelor.InventoryService.service;
 
-import bachelor.InventoryService.dto.ProductDto;
-import bachelor.InventoryService.model.Product;
+import bachelor.InventoryService.api.ProductDto;
 
 import java.util.List;
 
@@ -10,5 +9,7 @@ public interface ProductService {
     List<ProductDto> getAllProducts();
     ProductDto createProduct(ProductDto productDto);
     Long changeQuantity(String id, long quantity);
-    Boolean orderProduct(String id, long quantity);
+    ProductDto orderProduct(String id, long quantity);
+
+    List<ProductDto> orderProducts(List<ProductDto> products);
 }

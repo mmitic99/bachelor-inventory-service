@@ -1,6 +1,6 @@
 package bachelor.InventoryService.service.impl;
 
-import bachelor.InventoryService.dto.ProductDto;
+import bachelor.InventoryService.api.ProductDto;
 import bachelor.InventoryService.exception.BadRequestException;
 import bachelor.InventoryService.model.Category;
 import bachelor.InventoryService.model.FeatureName;
@@ -14,9 +14,8 @@ import org.bson.types.ObjectId;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,13 +78,31 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Boolean orderProduct(String id, long quantity) {
+    public ProductDto orderProduct(String id, long quantity) {
         Product product = mapper.map(getProductById(id), Product.class);
         changeQuantity(id, quantity);
         Product changedProduct = mapper.map(getProductById(id), Product.class);
-        if(product.getQuantity() == changedProduct.getQuantity()){
-            return false;
+        if (product.getQuantity() == changedProduct.getQuantity()) {
+            throw new BadRequestException("Not changed");
         }
-        return true;
+        changedProduct.setQuantity(quantity);
+        ProductDto retVal = mapper.map(changedProduct, ProductDto.class);
+        retVal.setId(id);
+        return retVal;
+    }
+
+    @Override
+    public List<ProductDto> orderProducts(List<ProductDto> products) {
+        List<ProductDto> retVal = new ArrayList<>();
+
+        products.forEach((productDto -> {
+            retVal.forEach(p -> {
+               if(p.getId().equals(productDto.getId())){
+                   throw new BadRequestException("There is 2 products with same id");
+               }
+            });
+            retVal.add(orderProduct(productDto.getId(), productDto.getQuantity()));
+        }));
+        return retVal;
     }
 }

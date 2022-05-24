@@ -1,14 +1,16 @@
 package bachelor.InventoryService.controller;
 
-import bachelor.InventoryService.dto.ProductDto;
+import bachelor.InventoryService.api.ProductDto;
 import bachelor.InventoryService.service.ProductService;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -21,31 +23,48 @@ public class ProductController {
     private final Gson gson;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getProductById(@PathVariable String id){
+    public ResponseEntity<ProductDto> getProductById(@PathVariable String id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping("")
-    public ResponseEntity<List<ProductDto>> getAllProducts(){
+    public ResponseEntity<List<ProductDto>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @PostMapping("")
-    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto){
+    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
         return ResponseEntity.ok(productService.createProduct(productDto));
     }
 
     @PutMapping("/quantity")
-    public ResponseEntity<Long> changeQuantity(@RequestBody ProductDto productDto){
+    public ResponseEntity<Long> changeQuantity(@RequestBody ProductDto productDto) {
         return ResponseEntity.ok(productService.changeQuantity(productDto.getId(), productDto.getQuantity()));
     }
 
     @PutMapping("/order")
-    public ResponseEntity<Boolean> orderProduct(@RequestParam String body){
-        //body = aws.kms.decrypt
-        ProductDto productDto = gson.fromJson(new String(Base64.getDecoder().decode(body)), ProductDto.class);
-        return ResponseEntity.ok(productService.orderProduct(productDto.getId(), productDto.getQuantity()));
+    public ResponseEntity<String> orderProduct(@RequestParam String product) {
+        //product = aws.kms.decrypt(product)
+        ProductDto productDto = gson.fromJson(new String(Base64.getDecoder().decode(product)), ProductDto.class);
+        ProductDto orderedProduct = productService.orderProduct(productDto.getId(), productDto.getQuantity());
+
+        String json = gson.toJson(orderedProduct);
+        byte[] bytes = Base64.getEncoder().encode(json.getBytes());
+        return ResponseEntity.ok(new String(bytes));
     }
 
+    //TODO: izmeni povratnu vrednost na List<ProductDto>
+    @PutMapping("/order/more")
+    public ResponseEntity<String> orderProducts(@RequestParam String products) {
+        //products = aws.kms.decrypt(products)
+        Type listType = new TypeToken<ArrayList<ProductDto>>() {}.getType();
+        List<ProductDto> productDtos = gson.fromJson(new String(Base64.getDecoder().decode(products)), listType);
+
+        List<ProductDto> orderedProducts = productService.orderProducts(productDtos);
+
+        String json = gson.toJson(orderedProducts);
+        byte[] bytes = Base64.getEncoder().encode(json.getBytes());
+        return ResponseEntity.ok(new String(bytes));
+    }
 
 }
