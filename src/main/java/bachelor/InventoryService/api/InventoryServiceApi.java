@@ -14,8 +14,8 @@ public interface InventoryServiceApi {
     String get(@RequestParam String param);
 
     @PutMapping("/product/order/more")
-    ResponseEntity<String> orderProducts(@RequestParam String products);
+    ResponseEntity<byte[]> orderProducts(@RequestParam byte[] products);
 
     @PutMapping("/product/order")
-    ResponseEntity<String> orderProduct(@RequestParam String product);
+    ResponseEntity<byte[]> orderProduct(@RequestParam byte[] product);
 }

@@ -1,6 +1,7 @@
 package bachelor.InventoryService.controller;
 
 import bachelor.InventoryService.api.ProductDto;
+import bachelor.InventoryService.service.AwsKeyManagementService;
 import bachelor.InventoryService.service.ProductService;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
@@ -20,6 +22,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final AwsKeyManagementService awsKeyManagementService;
     private final Gson gson;
 
     @GetMapping("/{id}")
@@ -43,28 +46,41 @@ public class ProductController {
     }
 
     @PutMapping("/order")
-    public ResponseEntity<String> orderProduct(@RequestParam String product) {
-        //product = aws.kms.decrypt(product)
-        ProductDto productDto = gson.fromJson(new String(Base64.getDecoder().decode(product)), ProductDto.class);
+    public ResponseEntity<byte[]> orderProduct(@RequestParam byte[] product) {
+
+        System.out.println("Method orderProduct - received paramameter: " + Arrays.toString(product));
+        String decrypted = awsKeyManagementService.DecryptText(product);
+        ProductDto productDto = gson.fromJson(decrypted, ProductDto.class);
+        System.out.println("Method orderProduct - decrypted paramameter: " + decrypted);
+
         ProductDto orderedProduct = productService.orderProduct(productDto.getId(), productDto.getQuantity());
 
         String json = gson.toJson(orderedProduct);
-        byte[] bytes = Base64.getEncoder().encode(json.getBytes());
-        return ResponseEntity.ok(new String(bytes));
+        String keyId = awsKeyManagementService.GetKeyByAlias("bachelor-order");
+        byte[] encrypted = awsKeyManagementService.EncryptText(json, keyId);
+
+        System.out.println("Method orderProduct - sended response: " + Arrays.toString(encrypted));
+
+        return ResponseEntity.ok(encrypted);
     }
 
-    //TODO: izmeni povratnu vrednost na List<ProductDto>
     @PutMapping("/order/more")
-    public ResponseEntity<String> orderProducts(@RequestParam String products) {
-        //products = aws.kms.decrypt(products)
+    public ResponseEntity<byte[]> orderProducts(@RequestParam byte[] products) {
+        System.out.println("Method orderProducts - received paramameter: " + Arrays.toString(products));
         Type listType = new TypeToken<ArrayList<ProductDto>>() {}.getType();
-        List<ProductDto> productDtos = gson.fromJson(new String(Base64.getDecoder().decode(products)), listType);
+        String decrypted = awsKeyManagementService.DecryptText(products);
+        List<ProductDto> productDtos = gson.fromJson(decrypted, listType);
+        System.out.println("Method orderProducts - decrypted paramameter: " + decrypted);
 
         List<ProductDto> orderedProducts = productService.orderProducts(productDtos);
 
         String json = gson.toJson(orderedProducts);
-        byte[] bytes = Base64.getEncoder().encode(json.getBytes());
-        return ResponseEntity.ok(new String(bytes));
+        String keyId = awsKeyManagementService.GetKeyByAlias("bachelor-order");
+        byte[] encrypted = awsKeyManagementService.EncryptText(json, keyId);
+
+        System.out.println("Method orderProducts - sended response: " + Arrays.toString(encrypted));
+
+        return ResponseEntity.ok(encrypted);
     }
 
 }
