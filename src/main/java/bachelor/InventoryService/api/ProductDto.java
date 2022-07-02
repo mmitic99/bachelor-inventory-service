@@ -23,6 +23,6 @@ public class ProductDto {
     private double price;
     private long quantity;
     private String category;
-    private Map<String, byte[]> images;
+    private Map<String, String> images;
     private Map<String, List<String>> features;
 }

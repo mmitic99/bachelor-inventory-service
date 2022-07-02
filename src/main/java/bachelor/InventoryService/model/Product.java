@@ -6,8 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @AllArgsConstructor
@@ -23,4 +22,12 @@ public class Product {
     private String category;
     private Map<String, byte[]> images;
     private Map<String, List<String>> features;
+
+    public String AddImage(String name, byte[] image){
+        if(images == null){
+            images = new LinkedHashMap<>();
+        }
+        images.put(name, image);
+        return Base64.getEncoder().encodeToString(image);
+    }
 }

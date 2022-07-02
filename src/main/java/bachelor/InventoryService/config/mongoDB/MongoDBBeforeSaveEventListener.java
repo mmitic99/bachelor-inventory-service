@@ -24,7 +24,7 @@ public class MongoDBBeforeSaveEventListener extends AbstractMongoEventListener<O
 
             Document eventObject = event.getDocument();
 
-            List<String> keysNotToEncrypt = Arrays.asList("_class", "_id");
+            List<String> keysNotToEncrypt = Arrays.asList("_class", "_id", "images");
             System.out.println(eventObject.toString());
             for (String key :
                     eventObject.keySet()) {

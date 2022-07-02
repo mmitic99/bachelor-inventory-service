@@ -10,12 +10,13 @@ import bachelor.InventoryService.repository.FeatureNameRepository;
 import bachelor.InventoryService.repository.ProductRepository;
 import bachelor.InventoryService.service.ProductService;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import org.bson.types.ObjectId;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,15 +32,44 @@ public class ProductServiceImpl implements ProductService {
         if (ObjectId.isValid(id)) {
             ObjectId objectId = new ObjectId(id);
             Product product = productRepository.findById(objectId).orElseThrow(() -> new BadRequestException("Product is not found"));
-            return mapper.map(product, ProductDto.class);
+            ProductDto retVal = mapper.map(product, ProductDto.class);
+            retVal.setImages(imagesToBase64(product.getImages()));
+            return retVal;
         } else {
             throw new BadRequestException("Product id is invalid");
         }
     }
 
+    private Product getProductModelById(String id) {
+        if (ObjectId.isValid(id)) {
+            ObjectId objectId = new ObjectId(id);
+            Product product = productRepository.findById(objectId).orElseThrow(() -> new BadRequestException("Product is not found"));
+            return product;
+        } else {
+            throw new BadRequestException("Product id is invalid");
+        }
+    }
+
+    private Map<String, String> imagesToBase64(Map<String, byte[]> images) {
+
+        Map<String, String> retVal = new HashMap<>();
+        if (images == null) {
+            return retVal;
+        }
+        for (Map.Entry<String, byte[]> image :
+                images.entrySet()) {
+            retVal.put(image.getKey(), Base64.getEncoder().encodeToString(image.getValue()));
+        }
+        return retVal;
+    }
+
     @Override
     public List<ProductDto> getAllProducts() {
-        return productRepository.findAll().stream().map(product -> mapper.map(product, ProductDto.class)).collect(Collectors.toList());
+        return productRepository.findAll().stream().map(product -> {
+            var retVal = mapper.map(product, ProductDto.class);
+            retVal.setImages(imagesToBase64(product.getImages()));
+            return retVal;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -57,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
                 }
             });
 
-            Product product = Product.builder().name(productDto.getName()).category(productDto.getCategory()).images(productDto.getImages()).price(productDto.getPrice()).quantity(0L).features(productDto.getFeatures()).build();
+            Product product = Product.builder().name(productDto.getName()).category(productDto.getCategory()).images(null).price(productDto.getPrice()).quantity(0L).features(productDto.getFeatures()).build();
             return mapper.map(productRepository.save(product), ProductDto.class);
 
         } catch (Exception e) {
@@ -67,7 +97,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Long changeQuantity(String id, long quantity) {
-        Product product = mapper.map(getProductById(id), Product.class);
+        Product product = getProductModelById(id);
         product.setId(new ObjectId(id));
         product.setQuantity(product.getQuantity() + quantity);
         if (product.getQuantity() < 0) {
@@ -79,7 +109,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto orderProduct(String id, long quantity) {
-        Product product = mapper.map(getProductById(id), Product.class);
+        Product product = getProductModelById(id);
         changeQuantity(id, quantity);
         Product changedProduct = mapper.map(getProductById(id), Product.class);
         if (product.getQuantity() == changedProduct.getQuantity()) {
@@ -97,12 +127,27 @@ public class ProductServiceImpl implements ProductService {
 
         products.forEach((productDto -> {
             retVal.forEach(p -> {
-               if(p.getId().equals(productDto.getId())){
-                   throw new BadRequestException("There is 2 products with same id");
-               }
+                if (p.getId().equals(productDto.getId())) {
+                    throw new BadRequestException("There is 2 products with same id");
+                }
             });
             retVal.add(orderProduct(productDto.getId(), productDto.getQuantity()));
         }));
         return retVal;
+    }
+
+    @SneakyThrows
+    @Override
+    public String uploadImage(MultipartFile image, String productId) {
+        if (ObjectId.isValid(productId)) {
+            ObjectId objectId = new ObjectId(productId);
+            Product product = productRepository.findById(objectId).orElseThrow(() -> new BadRequestException("Product is not found"));
+            String base64Image = product.AddImage(UUID.randomUUID().toString(), image.getBytes());
+
+            product.setId(new ObjectId(productId));
+            productRepository.save(product);
+            return base64Image;
+        }
+        throw new BadRequestException("Product id is invalid");
     }
 }

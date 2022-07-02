@@ -26,7 +26,7 @@ public class MongoDBAfterLoadEventListener extends AbstractMongoEventListener<Ob
         if (!event.getCollectionName().equals("categories") && !event.getCollectionName().equals("featureNames")) {
             Document eventObject = event.getDocument();
 
-            List<String> keysNotToEncrypt = Arrays.asList("_class", "_id");
+            List<String> keysNotToEncrypt = Arrays.asList("_class", "_id", "images");
 
             for (String key :
                     eventObject.keySet()) {

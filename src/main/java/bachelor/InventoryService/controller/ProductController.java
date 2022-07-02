@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -38,6 +39,11 @@ public class ProductController {
     @PostMapping("")
     public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
         return ResponseEntity.ok(productService.createProduct(productDto));
+    }
+
+    @PostMapping("/image/{productId}")
+    public ResponseEntity<String> uploadImage(@RequestParam MultipartFile image, @PathVariable String productId){
+        return ResponseEntity.ok(productService.uploadImage(image, productId));
     }
 
     @PutMapping("/quantity")
