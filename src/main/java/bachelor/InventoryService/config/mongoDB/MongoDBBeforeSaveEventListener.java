@@ -1,6 +1,7 @@
 package bachelor.InventoryService.config.mongoDB;
 
 import bachelor.InventoryService.service.AwsKeyManagementService;
+import bachelor.InventoryService.service.EncryptionService;
 import com.google.gson.Gson;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,12 +9,16 @@ import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventLis
 import org.springframework.data.mongodb.core.mapping.event.BeforeSaveEvent;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 public class MongoDBBeforeSaveEventListener extends AbstractMongoEventListener<Object> {
 
     @Autowired
     private AwsKeyManagementService awsKeyManagementService;
+
+    @Autowired
+    private EncryptionService encryptionService;
     @Autowired
     private Gson gson;
 
@@ -24,16 +29,18 @@ public class MongoDBBeforeSaveEventListener extends AbstractMongoEventListener<O
 
             Document eventObject = event.getDocument();
 
-            List<String> keysNotToEncrypt = Arrays.asList("_class", "_id", "images");
-            System.out.println(eventObject.toString());
+            String cipherKey = (String) eventObject.get("key");
+            var decryptedKey = awsKeyManagementService.DecryptKey(Base64.getDecoder().decode(cipherKey));
+
+            List<String> keysNotToEncrypt = Arrays.asList("_class", "_id", "key");
             for (String key :
                     eventObject.keySet()) {
                 if (!keysNotToEncrypt.contains(key)) {
                     if (key.equals("images") || key.equals("features")) {
-                        eventObject.put(key, this.awsKeyManagementService.EncryptText(gson.toJson(eventObject.get(key)), keyId));
+                        eventObject.put(key, encryptionService.encrypt(gson.toJson(eventObject.get(key)), decryptedKey));
 
                     } else {
-                        eventObject.put(key, this.awsKeyManagementService.EncryptText(eventObject.get(key).toString(), keyId));
+                        eventObject.put(key, encryptionService.encrypt(eventObject.get(key).toString(), decryptedKey));
                     }
                 }
             }

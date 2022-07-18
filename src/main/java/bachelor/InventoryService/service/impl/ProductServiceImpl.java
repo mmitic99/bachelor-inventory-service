@@ -8,6 +8,7 @@ import bachelor.InventoryService.model.Product;
 import bachelor.InventoryService.repository.CategoryRepository;
 import bachelor.InventoryService.repository.FeatureNameRepository;
 import bachelor.InventoryService.repository.ProductRepository;
+import bachelor.InventoryService.service.AwsKeyManagementService;
 import bachelor.InventoryService.service.ProductService;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -26,6 +27,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final FeatureNameRepository featureNameRepository;
     private final ModelMapper mapper;
+    private final AwsKeyManagementService awsKeyManagementService;
 
     @Override
     public ProductDto getProductById(String id) {
@@ -87,7 +89,7 @@ public class ProductServiceImpl implements ProductService {
                 }
             });
 
-            Product product = Product.builder().name(productDto.getName()).category(productDto.getCategory()).images(null).price(productDto.getPrice()).quantity(0L).features(productDto.getFeatures()).build();
+            Product product = Product.builder().key(awsKeyManagementService.GenerateDataKey().getCiphertext()).name(productDto.getName()).category(productDto.getCategory()).images(null).price(productDto.getPrice()).quantity(0L).features(productDto.getFeatures()).build();
             return mapper.map(productRepository.save(product), ProductDto.class);
 
         } catch (Exception e) {
@@ -110,8 +112,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDto orderProduct(String id, long quantity) {
         Product product = getProductModelById(id);
-        changeQuantity(id, quantity);
-        Product changedProduct = mapper.map(getProductById(id), Product.class);
+        changeQuantity(id, -quantity);
+        Product changedProduct = getProductModelById(id);
         if (product.getQuantity() == changedProduct.getQuantity()) {
             throw new BadRequestException("Not changed");
         }
@@ -149,5 +151,10 @@ public class ProductServiceImpl implements ProductService {
             return base64Image;
         }
         throw new BadRequestException("Product id is invalid");
+    }
+
+    @Override
+    public List<ProductDto> getProductsByCategoryName(String categoryName) {
+        return getAllProducts().stream().filter(product -> product.getCategory().equals(categoryName)).collect(Collectors.toList());
     }
 }

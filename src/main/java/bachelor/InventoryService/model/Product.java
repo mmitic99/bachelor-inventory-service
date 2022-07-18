@@ -3,7 +3,6 @@ package bachelor.InventoryService.model;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.*;
@@ -22,6 +21,7 @@ public class Product {
     private String category;
     private Map<String, byte[]> images;
     private Map<String, List<String>> features;
+    private String key;
 
     public String AddImage(String name, byte[] image){
         if(images == null){

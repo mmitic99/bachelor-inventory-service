@@ -15,4 +15,6 @@ public interface ProductService {
     List<ProductDto> orderProducts(List<ProductDto> products);
 
     String uploadImage(MultipartFile image, String productId);
+
+    List<ProductDto> getProductsByCategoryName(String categoryName);
 }
