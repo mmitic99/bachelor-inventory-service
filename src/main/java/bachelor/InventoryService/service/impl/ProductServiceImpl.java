@@ -77,19 +77,23 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDto createProduct(ProductDto productDto) {
         try {
-            if (categoryRepository.findByName(productDto.getCategory().toLowerCase()) == null) {
+            Category category = categoryRepository.findByName(productDto.getCategory().toLowerCase());
+            if (category == null) {
                 //throw new BadRequestException("Not recognize category");
-                categoryRepository.save(Category.builder().name(productDto.getCategory().toLowerCase()).build());
+                category = categoryRepository.save(Category.builder().name(productDto.getCategory().toLowerCase()).build());
             }
 
+            Map<String, List<String>> features = new HashMap<>();
+
             productDto.getFeatures().forEach((key, value) -> {
-                if (featureNameRepository.findByName(key) == null) {
+                features.put(key.toLowerCase(), value);
+                if (featureNameRepository.findByName(key.toLowerCase()) == null) {
                     //throw new BadRequestException("Not recognize feature");
                     featureNameRepository.save(FeatureName.builder().name(key.toLowerCase()).build());
                 }
             });
 
-            Product product = Product.builder().key(awsKeyManagementService.GenerateDataKey().getCiphertext()).name(productDto.getName()).category(productDto.getCategory()).images(null).price(productDto.getPrice()).quantity(0L).features(productDto.getFeatures()).build();
+            Product product = Product.builder().key(awsKeyManagementService.GenerateDataKey().getCiphertext()).name(productDto.getName()).category(category.getName()).images(null).price(productDto.getPrice()).quantity(0L).features(features).build();
             return mapper.map(productRepository.save(product), ProductDto.class);
 
         } catch (Exception e) {
