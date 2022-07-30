@@ -1,6 +1,7 @@
 package bachelor.InventoryService.controller;
 
 import bachelor.InventoryService.api.ProductDto;
+import bachelor.InventoryService.dto.ImageDto;
 import bachelor.InventoryService.service.AwsKeyManagementService;
 import bachelor.InventoryService.service.ProductService;
 import com.google.gson.Gson;
@@ -46,9 +47,19 @@ public class ProductController {
         return ResponseEntity.ok(productService.createProduct(productDto));
     }
 
+    @PutMapping("")
+    public ResponseEntity<ProductDto> editProduct(@RequestBody ProductDto productDto) {
+        return ResponseEntity.ok(productService.editProduct(productDto));
+    }
     @PostMapping("/image/{productId}")
-    public ResponseEntity<String> uploadImage(@RequestParam MultipartFile image, @PathVariable String productId){
+    public ResponseEntity<ImageDto> uploadImage(@RequestParam MultipartFile image, @PathVariable String productId){
         return ResponseEntity.ok(productService.uploadImage(image, productId));
+    }
+
+    @PostMapping("/{productId}/image/{imageId}")
+    public ResponseEntity<ImageDto> removeImage(@PathVariable String productId, @PathVariable String imageId){
+        productService.removeImage(imageId, productId);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/quantity")

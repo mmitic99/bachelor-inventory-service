@@ -1,6 +1,7 @@
 package bachelor.InventoryService.service.impl;
 
 import bachelor.InventoryService.api.ProductDto;
+import bachelor.InventoryService.dto.ImageDto;
 import bachelor.InventoryService.exception.BadRequestException;
 import bachelor.InventoryService.model.Category;
 import bachelor.InventoryService.model.FeatureName;
@@ -43,7 +44,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product getProductModelById(String id) {
-        if (ObjectId.isValid(id)) {
+        if (id != null && ObjectId.isValid(id)) {
             ObjectId objectId = new ObjectId(id);
             Product product = productRepository.findById(objectId).orElseThrow(() -> new BadRequestException("Product is not found"));
             return product;
@@ -76,13 +77,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto createProduct(ProductDto productDto) {
-        try {
-            Category category = categoryRepository.findByName(productDto.getCategory().toLowerCase());
-            if (category == null) {
-                //throw new BadRequestException("Not recognize category");
-                category = categoryRepository.save(Category.builder().name(productDto.getCategory().toLowerCase()).build());
-            }
+        Category category = getCategory(productDto);
 
+        Map<String, List<String>> features = getFeatures(productDto);
+
+        Product product = Product.builder().key(awsKeyManagementService.GenerateDataKey().getCiphertext()).name(productDto.getName()).category(category.getName()).images(null).price(productDto.getPrice()).quantity(0L).features(features).build();
+        return mapper.map(productRepository.save(product), ProductDto.class);
+
+    }
+
+    private Map<String, List<String>> getFeatures(ProductDto productDto) {
+        try {
             Map<String, List<String>> features = new HashMap<>();
 
             productDto.getFeatures().forEach((key, value) -> {
@@ -92,13 +97,38 @@ public class ProductServiceImpl implements ProductService {
                     featureNameRepository.save(FeatureName.builder().name(key.toLowerCase()).build());
                 }
             });
-
-            Product product = Product.builder().key(awsKeyManagementService.GenerateDataKey().getCiphertext()).name(productDto.getName()).category(category.getName()).images(null).price(productDto.getPrice()).quantity(0L).features(features).build();
-            return mapper.map(productRepository.save(product), ProductDto.class);
-
+            return features;
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    private Category getCategory(ProductDto productDto) {
+        try {
+            Category category = categoryRepository.findByName(productDto.getCategory().toLowerCase());
+            if (category == null) {
+                //throw new BadRequestException("Not recognize category");
+                category = categoryRepository.save(Category.builder().name(productDto.getCategory().toLowerCase()).build());
+            }
+            return category;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @Override
+    public ProductDto editProduct(ProductDto productDto) {
+        Product product = getProductModelById(productDto.getId());
+
+        Category category = getCategory(productDto);
+        Map<String, List<String>> features = getFeatures(productDto);
+
+        product.setName(productDto.getName());
+        product.setPrice(productDto.getPrice());
+        product.setCategory(category.getName());
+        product.setFeatures(features);
+        return mapper.map(productRepository.save(product), ProductDto.class);
+
     }
 
     @Override
@@ -144,15 +174,16 @@ public class ProductServiceImpl implements ProductService {
 
     @SneakyThrows
     @Override
-    public String uploadImage(MultipartFile image, String productId) {
+    public ImageDto uploadImage(MultipartFile image, String productId) {
         if (ObjectId.isValid(productId)) {
             ObjectId objectId = new ObjectId(productId);
             Product product = productRepository.findById(objectId).orElseThrow(() -> new BadRequestException("Product is not found"));
-            String base64Image = product.AddImage(UUID.randomUUID().toString(), image.getBytes());
+            String imageId = UUID.randomUUID().toString();
+            String base64Image = product.AddImage(imageId, image.getBytes());
 
             product.setId(new ObjectId(productId));
             productRepository.save(product);
-            return base64Image;
+            return ImageDto.builder().id(imageId).base64Image(base64Image).build();
         }
         throw new BadRequestException("Product id is invalid");
     }
@@ -160,5 +191,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductDto> getProductsByCategoryName(String categoryName) {
         return getAllProducts().stream().filter(product -> product.getCategory().equals(categoryName)).collect(Collectors.toList());
+    }
+
+    @Override
+    public void removeImage(String imageId, String productId) {
+        var product = getProductModelById(productId);
+        product.getImages().remove(imageId);
+        product.setId(new ObjectId(productId));
+        productRepository.save(product);
     }
 }
