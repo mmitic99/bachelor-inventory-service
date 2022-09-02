@@ -106,8 +106,13 @@ public class ProductController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<List<ProductDto>> filter(@RequestParam String category, @RequestParam List<String> screenDiagonals, @RequestParam List<String> screenResolutions, @RequestParam List<String> processorProducer, @RequestParam List<String> ram, @RequestParam List<String> hdd) {
-        return ResponseEntity.ok(productService.filter(category, screenDiagonals, screenResolutions, processorProducer, ram, hdd));
+    public ResponseEntity<List<ProductDto>> filter(@RequestParam String searchParam, @RequestParam String category, @RequestParam List<String> screenDiagonals, @RequestParam List<String> screenResolutions, @RequestParam List<String> processorProducer, @RequestParam List<String> ram, @RequestParam List<String> hdd) {
+        return ResponseEntity.ok(productService.filter(searchParam, category, screenDiagonals, screenResolutions, processorProducer, ram, hdd));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductDto>> search(@RequestParam String searchParam) {
+        return ResponseEntity.ok(productService.search(searchParam));
     }
 
 }

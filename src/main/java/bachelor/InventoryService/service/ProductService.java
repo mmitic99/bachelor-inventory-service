@@ -23,5 +23,7 @@ public interface ProductService {
 
     ProductDto editProduct(ProductDto productDto);
 
-    List<ProductDto> filter(String categoryName, List<String> screenDiagonals, List<String> screenResolutions, List<String> processorProducer, List<String> ram, List<String> hdd);
+    List<ProductDto> filter(String searchParam, String categoryName, List<String> screenDiagonals, List<String> screenResolutions, List<String> processorProducer, List<String> ram, List<String> hdd);
+
+    List<ProductDto> search(String searchParam);
 }

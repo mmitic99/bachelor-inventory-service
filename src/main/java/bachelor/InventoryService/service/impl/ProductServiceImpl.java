@@ -132,10 +132,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDto> filter(String categoryName, List<String> screenDiagonals, List<String> screenResolutions, List<String> processorProducer, List<String> ram, List<String> hdd) {
+    public List<ProductDto> filter(String searchParam, String categoryName, List<String> screenDiagonals, List<String> screenResolutions, List<String> processorProducer, List<String> ram, List<String> hdd) {
         List<ProductDto> products;
         List<ProductDto> retVal = new ArrayList<>();
-        if (categoryName.equals("all")) {
+        if(searchParam!=null && !searchParam.equals("")){
+            products = search(searchParam);
+        }
+        else if (categoryName.equals("all")) {
             products = getAllProducts();
         } else {
             products = getProductsByCategoryName(categoryName);
@@ -152,12 +155,27 @@ public class ProductServiceImpl implements ProductService {
         return retVal;
     }
 
+    @Override
+    public List<ProductDto> search(String searchParam) {
+        List<ProductDto> products = getAllProducts();
+        List<ProductDto> retVal = new ArrayList<>();
+
+        for (ProductDto productDto :
+                products) {
+            if (productDto.getName().toLowerCase().equals(searchParam.toLowerCase()) || productDto.getName().toLowerCase().contains(searchParam.toLowerCase()) ||
+                    productDto.getCategory().toLowerCase().equals(searchParam.toLowerCase()) || productDto.getCategory().toLowerCase().contains(searchParam.toLowerCase())) {
+                retVal.add(productDto);
+            }
+        }
+        return retVal;
+    }
+
     private boolean isExists(List<String> features, List<String> filters) {
-        if(filters.size() == 0){
+        if (filters.size() == 0) {
             return true;
         }
 
-        if(features == null && filters.size() != 0){
+        if (features == null && filters.size() != 0) {
             return false;
         }
 
