@@ -132,6 +132,48 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductDto> filter(String categoryName, List<String> screenDiagonals, List<String> screenResolutions, List<String> processorProducer, List<String> ram, List<String> hdd) {
+        List<ProductDto> products;
+        List<ProductDto> retVal = new ArrayList<>();
+        if (categoryName.equals("all")) {
+            products = getAllProducts();
+        } else {
+            products = getProductsByCategoryName(categoryName);
+        }
+        for (ProductDto product :
+                products) {
+            if (isExists(product.getFeatures().get("dijagonala ekrana"), screenDiagonals) &&
+                    isExists(product.getFeatures().get("rezolucija ekrana"), screenResolutions) &&
+                    isExists(product.getFeatures().get("procesor"), processorProducer) &&
+                    isExists(product.getFeatures().get("ram memorija"), ram) &&
+                    isExists(product.getFeatures().get("hard disk"), hdd))
+                retVal.add(product);
+        }
+        return retVal;
+    }
+
+    private boolean isExists(List<String> features, List<String> filters) {
+        if(filters.size() == 0){
+            return true;
+        }
+
+        if(features == null && filters.size() != 0){
+            return false;
+        }
+
+        for (String feature :
+                features) {
+            for (String filter :
+                    filters) {
+                if (feature.toLowerCase().equals(filter.toLowerCase()) || feature.toLowerCase().contains(filter.toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
     public Long changeQuantity(String id, long quantity) {
         Product product = getProductModelById(id);
         product.setId(new ObjectId(id));

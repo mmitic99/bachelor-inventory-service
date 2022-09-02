@@ -105,4 +105,9 @@ public class ProductController {
         return ResponseEntity.ok(encrypted);
     }
 
+    @GetMapping("/filter")
+    public ResponseEntity<List<ProductDto>> filter(@RequestParam String category, @RequestParam List<String> screenDiagonals, @RequestParam List<String> screenResolutions, @RequestParam List<String> processorProducer, @RequestParam List<String> ram, @RequestParam List<String> hdd) {
+        return ResponseEntity.ok(productService.filter(category, screenDiagonals, screenResolutions, processorProducer, ram, hdd));
+    }
+
 }

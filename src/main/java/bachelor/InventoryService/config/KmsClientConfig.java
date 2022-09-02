@@ -13,7 +13,7 @@ public class KmsClientConfig {
 
     @Bean
     public KmsClient KmsClient() {
-        AwsCredentials awsCredentials = AwsBasicCredentials.create("AKIAWGYYFVFVQ2ZDJLOO", "mYObsXRgfjML44ilQ/wfl23yDflbT+OUMa18ocha");
+        AwsCredentials awsCredentials = AwsBasicCredentials.create(System.getenv("ACCESS_KEY_ID"), System.getenv("SECRET_ACCESS_KEY"));
         return KmsClient.builder().credentialsProvider(StaticCredentialsProvider.create(awsCredentials)).region(Region.US_EAST_1).build();
     }
 }
